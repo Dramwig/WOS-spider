@@ -4,7 +4,7 @@ Python script to crawl Web of Science retrieved papers based on selenium package
 
 ## 思路
 
-这个爬虫的思路继承和脱胎自[CNKI知网爬虫 & Python](https://zhuanlan.zhihu.com/p/670809708?)。新版Web of Science并不像知网一样不需要账号也能检索，而Web of Science一般需要购买账号或者使用图书馆数据库转跳。因为多种多样的的进入方式只能通过手动处理，进而思考：我们是否可以中断程序手动控制浏览器，之后再把控制权交给程序进行？然后就有了这样的代码。
+这个爬虫的思路继承和脱胎自[CNKI知网爬虫](https://github.com/Dramwig/CNKI-spider)。新版Web of Science并不像知网一样不需要账号也能检索，而Web of Science一般需要购买账号或者使用图书馆数据库转跳。因为多种多样的的进入方式只能通过手动处理，进而思考：我们是否可以中断程序手动控制浏览器，之后再把控制权交给程序进行？然后就有了这样的代码。
 
 综上所述，这个爬虫有了以下提升：
 
