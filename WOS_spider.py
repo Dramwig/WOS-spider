@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -6,7 +5,7 @@ File: WOS_spider.py
 Author: Dramwig
 Email: dramwig@outlook.com
 Date: 2024-02-27
-Version: 1.0
+Version: 1.2
 
 Description: This script uses Selenium and BeautifulSoup to scrape detailed paper information from Web of Science (WOS) website.
 It navigates through each paper's detail page, extracts key information such as title, citation count, country, journal, etc., 
@@ -89,8 +88,19 @@ if __name__ == "__main__":
     papers_need = 100000
     file_path = 'result.csv'    
     wait_time = 30
-    pause_time = 3
+    pause_time = 4
+    
+    # 变量
     xpath_nextpaper = '/html/body/app-wos/main/div/div/div[2]/div/div/div[2]/app-input-route/app-full-record-home/div[1]/app-page-controls/div/form/div/button[2]'
+    df = pd.DataFrame()
+    index = 0
+    
+    # 读取df
+    ifread = input("是否读取已有的CSV文件？(y/n)")
+    if ifread == 'y':
+        df = pd.read_csv(file_path, index_col=0)
+        index = int(df.index[-1].split('_')[-1])
+        print(f"读取已有的CSV文件，当前行索引为{index},即第{index+1}篇论文")
     
     # 打开的页面
     driver = webdriver.Chrome()
@@ -110,49 +120,45 @@ if __name__ == "__main__":
 
     # 在新窗口上进行操作，例如获取新窗口的标题
     print("新窗口的标题(请确保页面正确):", driver.title)
-    
-    df = pd.DataFrame()
-    index = 0
 
     while index <= papers_need:
         print("正在处理第", index+1, "篇论文")
+        
+        # 等待页面加载
+        time.sleep(pause_time/2)
         
         try:
             # 或者等待直到某个元素可见
             element = WebDriverWait(driver, wait_time).until(
                 EC.visibility_of_element_located((By.XPATH, '//*[@id="FRAOrgTa-RepAddressFull-0"]'))
             )
-            
-        except:
+        except Exception as e:
+            print("An error occurred:", e)
             print("等待超时，可能是页面加载失败")
+
+        time.sleep(pause_time/2)
                 
         # 使用Selenium获取页面的HTML源码
         html = driver.page_source
         
-        # # 将HTML源码写入文件
-        # with open("page_source.html", "w", encoding="utf-8") as f:
-        #     f.write(html)
-
         # 解析HTML
-        index,data = parse_html(html)
-        row_index = f'Row_{index}'
-        if row_index in df.index:
-            df.loc[row_index] = pd.Series(data, name=row_index) # 如果行索引存在，则覆盖对应行的数据
-        else:
-            df = df._append(pd.Series(data, name=row_index)) # 如果行索引不存在，则追加新的行
-        df.to_csv(file_path, index=True)  # 将DataFrame保存为CSV文件,保留行索引作为第一列
-
-        # debug
-        # input("完成后按Enter键继续...")
-        
         try:
+            index,data = parse_html(html)
+            row_index = f'Row_{index}'
+            if row_index in df.index:
+                df.loc[row_index] = pd.Series(data, name=row_index) # 如果行索引存在，则覆盖对应行的数据
+            else:
+                df = df._append(pd.Series(data, name=row_index)) # 如果行索引不存在，则追加新的行
+            df.to_csv(file_path, index=True)  # 将DataFrame保存为CSV文件,保留行索引作为第一列
+
+            # debug
+            # input("完成后按Enter键继续...")
+        
             # 切换到下一页
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath_nextpaper))).click()
-        except:
+        except Exception as e:
+            print("An error occurred:", e)
             input("网页出现问题等待手动解决...")
-        
-        # 等待页面加载
-        time.sleep(pause_time)
         
 
     # 关闭浏览器
