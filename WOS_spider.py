@@ -5,7 +5,7 @@ File: WOS_spider.py
 Author: Dramwig
 Email: dramwig@outlook.com
 Date: 2024-02-27
-Version: 1.2
+Version: 1.3
 
 Description: This script uses Selenium and BeautifulSoup to scrape detailed paper information from Web of Science (WOS) website.
 It navigates through each paper's detail page, extracts key information such as title, citation count, country, journal, etc., 
@@ -74,7 +74,7 @@ def parse_html(html):
     
     try:
         input_box = soup.find(class_='wos-input-underline page-box')  # 获取包含输入框的标签
-        index = int(input_box['aria-label'].split()[-1])
+        index = int(input_box['aria-label'].split()[-1].replace(",", ""))
     except:
         print("获取页码失败")
         
