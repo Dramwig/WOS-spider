@@ -5,7 +5,7 @@ File: WOS_spider.py
 Author: Dramwig
 Email: dramwig@outlook.com
 Date: 2024-02-27
-Version: 1.4
+Version: 1.5
 
 Description: This script uses Selenium and BeautifulSoup to scrape detailed paper information from Web of Science (WOS) website.
 It navigates through each paper's detail page, extracts key information such as title, citation count, country, journal, etc., 
@@ -52,6 +52,7 @@ def parse_html(html):
     try:
         class_title = soup.find(class_="title text--large cdx-title")
         data_dict['title'] = class_title.text.strip()
+        print('\t'+class_title.text.strip())
     except:
         print("获取标题失败")
 
@@ -63,10 +64,15 @@ def parse_html(html):
 
     try:
         class_addresses = soup.find('span', class_='ng-star-inserted', id='FRAOrgTa-RepAddressFull-0')
-        print(class_addresses.text.strip())
+        print('\t'+class_addresses.text.strip())
         data_dict['country'] = class_addresses.text.split(',')[-1].strip()
     except:
-        print("获取国家失败")
+        try:
+            class_addresses = soup.find('span', class_='value padding-right-5--reversible')
+            print('\t查询规则2：'+class_addresses.text.strip())
+            data_dict['country'] = class_addresses.text.split(',')[-1].strip()
+        except:
+            print("获取国家失败")
     
     try:
         class_journal = soup.find(class_="mat-focus-indicator mat-tooltip-trigger font-size-14 summary-source-title-link remove-space no-left-padding mat-button mat-button-base mat-primary font-size-16 ng-star-inserted")
@@ -89,10 +95,11 @@ if __name__ == "__main__":
     url_root = 'https://webofscience-clarivate-cn-s.era.lib.swjtu.edu.cn/wos/alldb/basic-search'
     papers_need = 100000
     file_path = 'result.csv'    
-    wait_time = 5
+    wait_time = 2
     pause_time = 1
     
     # 变量
+    judge_xpath = '//*[@id="SumAuthTa-MainLabel-author-en"]/span'
     xpath_nextpaper = '/html/body/app-wos/main/div/div/div[2]/div/div/div[2]/app-input-route/app-full-record-home/div[1]/app-page-controls/div/form/div/button[2]'
     df = pd.DataFrame()
     index = 0
@@ -134,7 +141,7 @@ if __name__ == "__main__":
         try:
             # 或者等待直到某个元素可见
             element = WebDriverWait(driver, wait_time).until(
-                EC.visibility_of_element_located((By.XPATH, '//*[@id="FRAOrgTa-RepAddressFull-0"]'))
+                EC.visibility_of_element_located((By.XPATH, judge_xpath))
             )
         except Exception as e:
             print("等待超时，页面不存在该元素，也可能是页面加载失败")
