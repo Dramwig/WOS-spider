@@ -5,7 +5,7 @@ File: WOS_spider.py
 Author: Dramwig
 Email: dramwig@outlook.com
 Date: 2024-02-27
-Version: 1.3
+Version: 1.4
 
 Description: This script uses Selenium and BeautifulSoup to scrape detailed paper information from Web of Science (WOS) website.
 It navigates through each paper's detail page, extracts key information such as title, citation count, country, journal, etc., 
@@ -24,6 +24,8 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+import winsound
+
 
 # 解析html
 def parse_html(html):
@@ -45,7 +47,7 @@ def parse_html(html):
             # 存储到字典中
             data_dict[label] = text
     except:
-        print(f"解析容器失败")
+        print("解析容器失败")
     
     try:
         class_title = soup.find(class_="title text--large cdx-title")
@@ -87,13 +89,15 @@ if __name__ == "__main__":
     url_root = 'https://webofscience-clarivate-cn-s.era.lib.swjtu.edu.cn/wos/alldb/basic-search'
     papers_need = 100000
     file_path = 'result.csv'    
-    wait_time = 30
-    pause_time = 4
+    wait_time = 5
+    pause_time = 1
     
     # 变量
     xpath_nextpaper = '/html/body/app-wos/main/div/div/div[2]/div/div/div[2]/app-input-route/app-full-record-home/div[1]/app-page-controls/div/form/div/button[2]'
     df = pd.DataFrame()
     index = 0
+    duration = 5000  # 提示音时间 millisecond
+    freq = 440  # 提示音Hz
     
     # 读取df
     ifread = input("是否读取已有的CSV文件？(y/n)")
@@ -133,8 +137,7 @@ if __name__ == "__main__":
                 EC.visibility_of_element_located((By.XPATH, '//*[@id="FRAOrgTa-RepAddressFull-0"]'))
             )
         except Exception as e:
-            print("An error occurred:", e)
-            print("等待超时，可能是页面加载失败")
+            print("等待超时，页面不存在该元素，也可能是页面加载失败")
 
         time.sleep(pause_time/2)
                 
@@ -158,7 +161,9 @@ if __name__ == "__main__":
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath_nextpaper))).click()
         except Exception as e:
             print("An error occurred:", e)
+            winsound.Beep(freq, duration)  # 提示音
             input("网页出现问题等待手动解决...")
+            
         
 
     # 关闭浏览器
