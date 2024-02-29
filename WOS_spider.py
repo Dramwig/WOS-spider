@@ -5,7 +5,7 @@ File: WOS_spider.py
 Author: Dramwig
 Email: dramwig@outlook.com
 Date: 2024-02-27
-Version: 1.5
+Version: 1.6
 
 Description: This script uses Selenium and BeautifulSoup to scrape detailed paper information from Web of Science (WOS) website.
 It navigates through each paper's detail page, extracts key information such as title, citation count, country, journal, etc., 
@@ -23,7 +23,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
+import time, keyboard
 import winsound
 
 
@@ -95,16 +95,17 @@ if __name__ == "__main__":
     url_root = 'https://webofscience-clarivate-cn-s.era.lib.swjtu.edu.cn/wos/alldb/basic-search'
     papers_need = 100000
     file_path = 'result.csv'    
-    wait_time = 2
-    pause_time = 1
+    wait_time = 5
+    pause_time = 0.1
     
     # 变量
-    judge_xpath = '//*[@id="SumAuthTa-MainLabel-author-en"]/span'
+    judge_xpath = '//*[@id="FullRRPTa-useInWOS"]'
     xpath_nextpaper = '/html/body/app-wos/main/div/div/div[2]/div/div/div[2]/app-input-route/app-full-record-home/div[1]/app-page-controls/div/form/div/button[2]'
     df = pd.DataFrame()
     index = 0
     duration = 5000  # 提示音时间 millisecond
     freq = 440  # 提示音Hz
+    flag = 0
     
     # 读取df
     ifread = input("是否读取已有的CSV文件？(y/n)")
@@ -113,9 +114,17 @@ if __name__ == "__main__":
         index = int(df.index[-1].split('_')[-1])
         print(f"读取已有的CSV文件，当前行索引为{index},即第{index+1}篇论文")
     
-    # 打开的页面
-    driver = webdriver.Chrome()
-    driver.get(url_root)
+    # 创建ChromeOptions对象
+    chrome_options = webdriver.ChromeOptions()
+
+    # 禁止加载图片等资源
+    chrome_options.add_argument("--disable-images")
+    chrome_options.add_argument("--disable-plugins")
+    chrome_options.add_argument("--disable-extensions")
+
+    # 创建WebDriver对象时传入ChromeOptions
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get(url_root) # 打开的页面
     
     # 手动操作，比如切换标签页等
     input("请手动操作至论文详情页面,完成后按Enter键继续...")
@@ -136,8 +145,6 @@ if __name__ == "__main__":
         print("正在处理第", index+1, "篇论文")
         
         # 等待页面加载
-        time.sleep(pause_time/2)
-        
         try:
             # 或者等待直到某个元素可见
             element = WebDriverWait(driver, wait_time).until(
@@ -145,14 +152,12 @@ if __name__ == "__main__":
             )
         except Exception as e:
             print("等待超时，页面不存在该元素，也可能是页面加载失败")
-
-        time.sleep(pause_time/2)
-                
-        # 使用Selenium获取页面的HTML源码
-        html = driver.page_source
+        time.sleep(pause_time)
         
         # 解析HTML
         try:
+            html = driver.page_source
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath_nextpaper))).click() # 切换到下一页
             index,data = parse_html(html)
             row_index = f'Row_{index}'
             if row_index in df.index:
@@ -161,15 +166,23 @@ if __name__ == "__main__":
                 df = df._append(pd.Series(data, name=row_index)) # 如果行索引不存在，则追加新的行
             df.to_csv(file_path, index=True)  # 将DataFrame保存为CSV文件,保留行索引作为第一列
 
-            # debug
-            # input("完成后按Enter键继续...")
-        
-            # 切换到下一页
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath_nextpaper))).click()
+            if keyboard.is_pressed('down') or keyboard.is_pressed('0'):  # 按下键盘上的向下键或者数字0 进入中断检查
+                t = input("程序中断，输入Enter键继续，其他用于调试...")
+                while t != '':
+                    html = driver.page_source
+                    index,data = parse_html(html)
+                    t = input("程序中断，输入Enter键继续...")
+            flag = flag - 1
         except Exception as e:
             print("An error occurred:", e)
-            winsound.Beep(freq, duration)  # 提示音
-            input("网页出现问题等待手动解决...")
+            if flag <= 0:
+                print("尝试重新加载页面...")
+                flag = 2
+                driver.back()
+                time.sleep(pause_time)
+            else:
+                winsound.Beep(freq, duration)  # 提示音
+                input("网页出现问题等待手动解决...")
             
         
 
