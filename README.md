@@ -73,7 +73,7 @@ The whole program implements automatic traversal of Web of Science paper detail 
 url_root = 'https://webofscience-clarivate-cn-s.era.lib.swjtu.edu.cn/wos/alldb/basic-search'
 papers_need = 100000
 file_path = 'result.csv'    
-wait_time = 30
+wait_time = 10
 pause_time = 3
 ```
 - EN
